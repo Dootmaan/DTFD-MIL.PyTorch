@@ -49,9 +49,11 @@ attCls = Attention_with_Classifier(L=params.mDim, num_cls=params.num_cls, dropra
 
 
 trainset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='train')
+valset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='val')
 testset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='test')
 
 trainloader=torch.utils.data.DataLoader(trainset, batch_size=1, shuffle=True, drop_last=False)
+valloader=torch.utils.data.DataLoader(valset, batch_size=1, shuffle=True, drop_last=False)
 testloader=torch.utils.data.DataLoader(testset, batch_size=1, shuffle=True, drop_last=False)
 
 classifier.train()
@@ -76,7 +78,7 @@ test_auc = 0
 
 ce_cri = torch.nn.CrossEntropyLoss(reduction='none').to(params.device)
 
-def TestModel(testloader):
+def TestModel(test_loader):
     classifier.eval()
     dimReduction.eval()
     attention.eval()
@@ -84,14 +86,14 @@ def TestModel(testloader):
 
     all_pred=[]
     all_gt=[]
-    for i, data in enumerate(trainloader):
+    for i, data in enumerate(test_loader):
         inputs, labels=data
 
         all_gt.append(labels.item())
         # labels=labels.to(params.device)
 
-        slide_sub_preds=[]
-        slide_sub_labels=[]
+        # slide_sub_preds=[]
+        # slide_sub_labels=[]
         slide_pseudo_feat=[]
         inputs_pseudo_bags=torch.chunk(inputs.squeeze(0), params.numGroup,dim=0)
         
@@ -202,8 +204,15 @@ for ii in range(params.EPOCH):
     scheduler0.step()
     scheduler1.step()
     
-    auc,acc=TestModel(testloader)
+    auc,acc=TestModel(valloader)
     if auc>best_auc:
         best_auc=auc
-        print('new best auc')
-
+        print('new best auc. Testing...')
+        TestModel(testloader)
+        tsave_dict = {
+            'classifier': classifier.state_dict(),
+            'dim_reduction': dimReduction.state_dict(),
+            'attention': attention.state_dict(),
+            'att_classifier': attCls.state_dict()
+        }
+        torch.save(tsave_dict, 'model_best.pth')
