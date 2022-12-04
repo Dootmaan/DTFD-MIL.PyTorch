@@ -11,7 +11,7 @@ class EmbededFeatsDataset(torch.utils.data.Dataset):
         self.data=[]
         self.label=[]
         if mode=='train' or self.mode=='val':
-            filenames=sorted(glob.glob(path+'/extracted_patches/training/*/256.1/*/feats1024.npy'))
+            filenames=sorted(glob.glob(path+'/extracted_patches/training/*/256.0/*/feats1024.npy'))
             random.seed(552) # make sure each time we have the same filenames order.
             random.shuffle(filenames)
             random.seed()
@@ -46,7 +46,7 @@ class EmbededFeatsDataset(torch.utils.data.Dataset):
                         self.label.append(0)
 
         if mode=='test':
-            filenames=sorted(glob.glob(path+'/extracted_patches/testing/*/256.1/*/feats1024.npy'))
+            filenames=sorted(glob.glob(path+'/extracted_patches/testing/*/256.0/*/feats1024.npy'))
             for fname in filenames:
                 print('processing:',fname)
                 npy=np.load(fname)

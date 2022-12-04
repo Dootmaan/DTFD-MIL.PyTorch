@@ -47,6 +47,11 @@ attention = Attention(params.mDim).to(params.device)
 dimReduction = DimReduction(1024, params.mDim, numLayer_Res=params.numLayer_Res).to(params.device)
 attCls = Attention_with_Classifier(L=params.mDim, num_cls=params.num_cls, droprate=params.droprate_2).to(params.device)
 
+pretrained_weights=torch.load('model_best.pth')
+classifier.load_state_dict(pretrained_weights['classifier'])
+dimReduction.load_state_dict(pretrained_weights['dim_reduction'])
+attention.load_state_dict(pretrained_weights['attention'])
+attCls.load_state_dict(pretrained_weights['att_classifier'])
 
 trainset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='train')
 valset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='val')
