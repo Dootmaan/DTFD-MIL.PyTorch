@@ -5,13 +5,13 @@ import numpy as np
 import pandas
 
 class EmbededFeatsDataset(torch.utils.data.Dataset):
-    def __init__(self,path,mode='train'):
+    def __init__(self,path,mode='train',level=0):
         super().__init__()
         self.mode=mode
         self.data=[]
         self.label=[]
         if mode=='train' or self.mode=='val':
-            filenames=sorted(glob.glob(path+'/extracted_patches/training/*/256.0/*/feats1024.npy'))
+            filenames=sorted(glob.glob(path+'/extracted_patches/training/*/256.'+str(level)+'/*/feats1024.npy'))
             random.seed(552) # make sure each time we have the same filenames order.
             random.shuffle(filenames)
             random.seed()
@@ -46,7 +46,7 @@ class EmbededFeatsDataset(torch.utils.data.Dataset):
                         self.label.append(0)
 
         if mode=='test':
-            filenames=sorted(glob.glob(path+'/extracted_patches/testing/*/256.0/*/feats1024.npy'))
+            filenames=sorted(glob.glob(path+'/extracted_patches/testing/*/256.'+str(level)+'/*/feats1024.npy'))
             for fname in filenames:
                 print('processing:',fname)
                 npy=np.load(fname)
@@ -64,16 +64,13 @@ class EmbededFeatsDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.label)
 
-    def augment(self,feats, base=0.95):
+    def augment(self,feats):
         np.random.shuffle(feats)
-        length=len(feats)
-        rand_len=random.randint(int(base*length),length)
-        feats=feats[:rand_len,:]
         return feats
 
     def __getitem__(self,index):
         # npy=np.load(self.data[index])
-        return self.data[index],self.label[index]
+        return self.augment(self.data[index]),self.label[index]
 
 if __name__=="__main__":
     dataset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='val')

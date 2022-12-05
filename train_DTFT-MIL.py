@@ -7,6 +7,8 @@ from dataset.EmbededFeatsDataset import EmbededFeatsDataset
 # torch.autograd.set_detect_anomaly(True)
 from sklearn.metrics import roc_auc_score
 import numpy as np
+from utils import eval_metric
+
 parser = argparse.ArgumentParser(description='abc')
 
 parser.add_argument('--name', default='abc', type=str)
@@ -47,15 +49,15 @@ attention = Attention(params.mDim).to(params.device)
 dimReduction = DimReduction(1024, params.mDim, numLayer_Res=params.numLayer_Res).to(params.device)
 attCls = Attention_with_Classifier(L=params.mDim, num_cls=params.num_cls, droprate=params.droprate_2).to(params.device)
 
-pretrained_weights=torch.load('model_best.pth')
-classifier.load_state_dict(pretrained_weights['classifier'])
-dimReduction.load_state_dict(pretrained_weights['dim_reduction'])
-attention.load_state_dict(pretrained_weights['attention'])
-attCls.load_state_dict(pretrained_weights['att_classifier'])
+# pretrained_weights=torch.load('model_best.pth')
+# classifier.load_state_dict(pretrained_weights['classifier'])
+# dimReduction.load_state_dict(pretrained_weights['dim_reduction'])
+# attention.load_state_dict(pretrained_weights['attention'])
+# attCls.load_state_dict(pretrained_weights['att_classifier'])
 
-trainset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='train')
-valset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='val')
-testset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='test')
+trainset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='train',level=0)
+valset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='val',level=0)
+testset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='test',level=0)
 
 trainloader=torch.utils.data.DataLoader(trainset, batch_size=1, shuffle=True, drop_last=False)
 valloader=torch.utils.data.DataLoader(valset, batch_size=1, shuffle=True, drop_last=False)
@@ -89,12 +91,13 @@ def TestModel(test_loader):
     attention.eval()
     attCls.eval()
 
-    all_pred=[]
-    all_gt=[]
+    gPred_1 = torch.FloatTensor().to(params.device)
+    gt_1 = torch.LongTensor().to(params.device)
+
     for i, data in enumerate(test_loader):
         inputs, labels=data
 
-        all_gt.append(labels.item())
+        labels=torch.LongTensor(labels).to(params.device).unsqueeze(0)
         # labels=labels.to(params.device)
 
         # slide_sub_preds=[]
@@ -129,17 +132,18 @@ def TestModel(test_loader):
 
         ## optimization for the second tier
         gSlidePred = torch.softmax(attCls(slide_pseudo_feat), dim=1)
-        all_pred.extend(gSlidePred.cpu().data.numpy().tolist())
+        gPred_1 = torch.cat([gPred_1, gSlidePred], dim=0)
+        gt_1 = torch.cat([gt_1, labels], dim=0)
         # loss1 = ce_cri(gSlidePred, labels)
         # optimizer1.zero_grad()
         # loss1.backward()
         # torch.nn.utils.clip_grad_norm_(attCls.parameters(), params.grad_clipping)
         # optimizer1.step()
-    all_pred=np.array(all_pred)
-    auc=roc_auc_score(all_gt, all_pred[:,1])
-    acc=np.sum(all_gt==np.argmax(all_pred,1))/len(all_gt)
-    print('auc{},acc:{}'.format(auc,acc))
-    return auc,acc
+    gPred_1 = gPred_1[:, -1]
+    macc_1, mprec_1, mrecal_1, mspec_1, mF1_1, auc_1 = eval_metric(gPred_1, gt_1)
+    
+    print('acc:{},prec:{},recall:{},spec:{},F1:{},auc{}'.format(macc_1, mprec_1, mrecal_1, mspec_1, mF1_1, auc_1))
+    return macc_1, mprec_1, mrecal_1, mspec_1, mF1_1, auc_1
 
 best_auc=0.7
 TestModel(testloader)
@@ -209,9 +213,9 @@ for ii in range(params.EPOCH):
     scheduler0.step()
     scheduler1.step()
     
-    auc,acc=TestModel(valloader)
-    if auc>best_auc:
-        best_auc=auc
+    macc_1, mprec_1, mrecal_1, mspec_1, mF1_1, auc_1=TestModel(valloader)
+    if auc_1>best_auc:
+        best_auc=auc_1
         print('new best auc. Testing...')
         TestModel(testloader)
         tsave_dict = {
