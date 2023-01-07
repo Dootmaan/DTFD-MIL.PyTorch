@@ -72,7 +72,7 @@ def get_roi_bounds(tslide, isDrawContoursOnImages=False, mask_level=5, cls_kerne
 
     return image_open_np, boundingBox
 
-def Extract_Patch_From_Slide_STRIDE(tslide:openslide.ImageSlide, tissue_mask, patch_save_folder, patch_level, mask_level, patch_stride, patch_size, threshold, level_list=[1], patch_size_list=[256], patch_surfix='jpg'):
+def Extract_Patch_From_Slide_STRIDE(tslide:openslide.ImageSlide, tissue_mask, patch_save_folder, patch_level, mask_level, patch_stride, patch_size, threshold, level_list=[1], patch_size_list=[256], patch_surfix='png'):
 
     assert patch_level == level_list[0]
     assert patch_size == patch_size_list[0]

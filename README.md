@@ -1,5 +1,11 @@
 # DTFD-MIL.PyTorch
 
+## Update 2023/01/07
+
+After consulting the authors, patch feature extration method in this repo has now been modified.
+
+## Prevoious Version
+
 This repo is built to help readers better understand CVPR2022 paper *DTFD-MIL: Double-tier feature distillation multiple Instance learning for histopathology whole slide image classification*. 
 
 This is NOT an official implementation of the paper. The official one is [here](https://github.com/hrzhang1123/DTFD-MIL)

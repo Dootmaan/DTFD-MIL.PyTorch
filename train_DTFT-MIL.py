@@ -30,7 +30,7 @@ parser.add_argument('--num_cls', default=2, type=int)
 parser.add_argument('--mDATA0_dir_train0', default='', type=str)  ## Train Set
 parser.add_argument('--mDATA0_dir_val0', default='', type=str)      ## Validation Set
 parser.add_argument('--mDATA_dir_test0', default='', type=str)         ## Test Set
-parser.add_argument('--numGroup', default=4, type=int)
+parser.add_argument('--numGroup', default=5, type=int)
 parser.add_argument('--total_instance', default=4, type=int)
 parser.add_argument('--numGroup_test', default=4, type=int)
 parser.add_argument('--total_instance_test', default=4, type=int)
@@ -55,13 +55,13 @@ attCls = Attention_with_Classifier(L=params.mDim, num_cls=params.num_cls, dropra
 # attention.load_state_dict(pretrained_weights['attention'])
 # attCls.load_state_dict(pretrained_weights['att_classifier'])
 
-trainset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='train',level=0)
-valset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='val',level=0)
-testset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='test',level=0)
+trainset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='train',level=1)
+valset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='val',level=1)
+testset=EmbededFeatsDataset('/newdata/why/CAMELYON16/',mode='test',level=1)
 
 trainloader=torch.utils.data.DataLoader(trainset, batch_size=1, shuffle=True, drop_last=False)
 valloader=torch.utils.data.DataLoader(valset, batch_size=1, shuffle=True, drop_last=False)
-testloader=torch.utils.data.DataLoader(testset, batch_size=1, shuffle=True, drop_last=False)
+testloader=torch.utils.data.DataLoader(testset, batch_size=1, shuffle=False, drop_last=False)
 
 classifier.train()
 dimReduction.train()
@@ -91,13 +91,15 @@ def TestModel(test_loader):
     attention.eval()
     attCls.eval()
 
-    gPred_1 = torch.FloatTensor().to(params.device)
-    gt_1 = torch.LongTensor().to(params.device)
+    # gPred_1 = torch.FloatTensor().to(params.device)
+    # gt_1 = torch.LongTensor().to(params.device)
 
+    y_score=[]
+    y_true=[]
     for i, data in enumerate(test_loader):
         inputs, labels=data
 
-        labels=torch.LongTensor(labels).to(params.device).unsqueeze(0)
+        labels=labels.data.numpy().tolist()
         # labels=labels.to(params.device)
 
         # slide_sub_preds=[]
@@ -132,18 +134,15 @@ def TestModel(test_loader):
 
         ## optimization for the second tier
         gSlidePred = torch.softmax(attCls(slide_pseudo_feat), dim=1)
-        gPred_1 = torch.cat([gPred_1, gSlidePred], dim=0)
-        gt_1 = torch.cat([gt_1, labels], dim=0)
-        # loss1 = ce_cri(gSlidePred, labels)
-        # optimizer1.zero_grad()
-        # loss1.backward()
-        # torch.nn.utils.clip_grad_norm_(attCls.parameters(), params.grad_clipping)
-        # optimizer1.step()
-    gPred_1 = gPred_1[:, -1]
-    macc_1, mprec_1, mrecal_1, mspec_1, mF1_1, auc_1 = eval_metric(gPred_1, gt_1)
-    
-    print('acc:{},prec:{},recall:{},spec:{},F1:{},auc{}'.format(macc_1, mprec_1, mrecal_1, mspec_1, mF1_1, auc_1))
-    return macc_1, mprec_1, mrecal_1, mspec_1, mF1_1, auc_1
+        
+        pred=(gSlidePred.cpu().data.numpy()).tolist()
+        y_score.extend(pred)
+        y_true.extend(labels)
+
+    acc = np.sum(y_true==np.argmax(y_score,axis=1))/len(y_true)
+    auc = roc_auc_score(y_true,[x[-1] for x in y_score])
+    print('result: auc:{},acc:{}'.format(auc,acc))
+    return auc,acc
 
 best_auc=0.7
 TestModel(testloader)
@@ -201,7 +200,7 @@ for ii in range(params.EPOCH):
 
         ## optimization for the second tier
         gSlidePred = attCls(slide_pseudo_feat)
-        loss1 = ce_cri(gSlidePred, labels)
+        loss1 = ce_cri(gSlidePred, labels).mean()
         optimizer1.zero_grad()
         loss1.backward()
         torch.nn.utils.clip_grad_norm_(attCls.parameters(), params.grad_clipping)
@@ -213,9 +212,9 @@ for ii in range(params.EPOCH):
     scheduler0.step()
     scheduler1.step()
     
-    macc_1, mprec_1, mrecal_1, mspec_1, mF1_1, auc_1=TestModel(valloader)
-    if auc_1>best_auc:
-        best_auc=auc_1
+    auc,acc=TestModel(valloader)
+    if auc>best_auc:
+        best_auc=auc
         print('new best auc. Testing...')
         TestModel(testloader)
         tsave_dict = {

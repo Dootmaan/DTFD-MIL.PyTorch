@@ -15,7 +15,7 @@ class EmbededFeatsDataset(torch.utils.data.Dataset):
             random.seed(552) # make sure each time we have the same filenames order.
             random.shuffle(filenames)
             random.seed()
-            train_frac, val_frac = 0.8, 0.2
+            train_frac, val_frac = 0.9, 0.1
             n_train=int(train_frac*len(filenames)+1)
             n_val=int(len(filenames)-n_train)
             
@@ -49,6 +49,8 @@ class EmbededFeatsDataset(torch.utils.data.Dataset):
             filenames=sorted(glob.glob(path+'/extracted_patches/testing/*/256.'+str(level)+'/*/feats1024.npy'))
             for fname in filenames:
                 print('processing:',fname)
+                if 'test_114.tif' in fname or 'test_124.tif' in fname:
+                    continue
                 npy=np.load(fname)
                 self.data.append(npy)
 
