@@ -2,6 +2,10 @@
 
 ## Update 2023/01/07
 
+We have updated the pretrained weights of ResNet50 to 'https://download.pytorch.org/models/resnet50-11ad3fa6.pth', and it achieved an AUC of 91.31.
+
+## Update 2023/01/07
+
 After consulting the authors, patch feature extration method in this repo has now been modified.
 
 ## Prevoious Version

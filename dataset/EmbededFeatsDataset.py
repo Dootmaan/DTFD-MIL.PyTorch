@@ -5,13 +5,13 @@ import numpy as np
 import pandas
 
 class EmbededFeatsDataset(torch.utils.data.Dataset):
-    def __init__(self,path,mode='train',level=0):
+    def __init__(self,path,mode='train',level=1):
         super().__init__()
         self.mode=mode
         self.data=[]
         self.label=[]
         if mode=='train' or self.mode=='val':
-            filenames=sorted(glob.glob(path+'/extracted_patches/training/*/256.'+str(level)+'/*/feats1024.npy'))
+            filenames=sorted(glob.glob(path+'/extracted_patches_0.8/training/*/256.'+str(level)+'/*/resnet1024_feats.npy'))
             random.seed(552) # make sure each time we have the same filenames order.
             random.shuffle(filenames)
             random.seed()
@@ -46,10 +46,10 @@ class EmbededFeatsDataset(torch.utils.data.Dataset):
                         self.label.append(0)
 
         if mode=='test':
-            filenames=sorted(glob.glob(path+'/extracted_patches/testing/*/256.'+str(level)+'/*/feats1024.npy'))
+            filenames=sorted(glob.glob(path+'/extracted_patches_0.8/testing/*/256.'+str(level)+'/*/resnet1024_feats.npy'))
             for fname in filenames:
                 print('processing:',fname)
-                if 'test_114.tif' in fname or 'test_124.tif' in fname:
+                if 'test_114' in fname or 'test_124' in fname:
                     continue
                 npy=np.load(fname)
                 self.data.append(npy)
