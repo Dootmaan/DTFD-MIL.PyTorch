@@ -1,8 +1,8 @@
 # DTFD-MIL.PyTorch
 
-## Update 2023/01/07
+## Update 2023/02/22
 
-We have updated the pretrained weights of ResNet50 to 'https://download.pytorch.org/models/resnet50-11ad3fa6.pth', and it achieved an AUC of 91.31.
+We have updated the pretrained weights of ResNet50 to 'https://download.pytorch.org/models/resnet50-11ad3fa6.pth', and it achieved an AUC of 93, which is very close to the result using the official repo of DTFD-MIL with its provided pickle dataset. 
 
 ## Update 2023/01/07
 
