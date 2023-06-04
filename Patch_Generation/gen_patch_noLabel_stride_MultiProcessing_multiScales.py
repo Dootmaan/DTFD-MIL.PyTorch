@@ -10,8 +10,8 @@ import PIL.Image as Image
 
 ####======================================    User Configuration
 num_thread = 4
-patch_dimension_level = 0    ## 0: 40x, 1: 20x
-patch_level_list = [0]  #[1,2,2]
+patch_dimension_level = 1    ## 0: 40x, 1: 20x
+patch_level_list = [1]  #[1,2,2]
 stride = 256
 psize = 256
 psize_list = [256] #[256, 192, 256]
